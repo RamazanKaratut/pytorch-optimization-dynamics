@@ -12,31 +12,27 @@ Bu deneyde aynı model; `SGD`, `SGD+Momentum`, `Adam` ve `AdamW` kullanılarak e
 ### Soru & Cevap Analizi:
 **1. Hangi optimizer en hızlı yakınsıyor (converge)?**
 
-* Eğrilerden de görülebileceği üzere **Adam ve AdamW** en hızlı yakınsayan algoritmalardır. Henüz ilk epoch'larda bile loss değerleri dramatik şekilde düşmüş ve yüksek doğruluk oranlarına ulaşılmıştır. Bunun nedeni, Adam'ın her parametre için öğrenme oranını (learning rate) gradyanların hareketli ortalamasına (momentum ve varyans) göre dinamik olarak ayarlamasıdır (Adaptive Learning Rate).
+* Eğrilerden ve eğitim loglarından da net bir şekilde görülebileceği üzere **Adam ve AdamW** en hızlı yakınsayan algoritmalardır. Henüz 2. epoch'ta Adam'ın eğitim kaybı (Train Loss) 0.09 seviyelerine düşerken, ivmesiz klasik SGD 0.29 seviyelerinde kalmıştır. Bunun nedeni, Adam'ın her parametre için öğrenme oranını (learning rate) gradyanların hareketli ortalamasına göre dinamik olarak ayarlamasıdır (Adaptive Learning Rate).
 
 **2. Hangi optimizer en iyi final performansı veriyor?**
-* Klasik SGD çok yavaş yakınsasa da, **SGD + Momentum** genellikle son epoch'larda Adam'ı yakalar ve hatta bazen geçer. Adam çok hızlı öğrenir ancak bazen keskin (sharp) minimumlara takılarak test verisinde ufak bir performans kaybı (generalization gap) yaşayabilir. Bu deneyde **AdamW** (Weight Decay'i daha doğru uygulayan Adam varyasyonu) ve **SGD+Momentum** en yüksek ve en stabil final test doğruluklarını sunmuştur.
+* Deney sonuçlarına göre en yüksek final test doğruluklarına **SGD+Momentum (%98.08 peak, %98.02 final)** ve **Adam (%98.00 final)** ulaşmıştır. 
+* Klasik SGD ivmesi olmadığı için çok yavaş kalmış (%96.53 final), Adam ise başta çok hızlı öğrenmesine rağmen son epoch'larda SGD+Momentum tarafından yakalanmıştır. Bu da derin öğrenmedeki o meşhur *"Adam çok hızlıdır ama SGD+Momentum daha iyi test performansı verir (geneller)"* kuralının pratik bir ispatıdır.
 
 ---
 
 ## 📉 Görev 2: Learning Rate Scheduling (Öğrenme Oranı Zamanlama)
-Modeli sabit bir Learning Rate ile eğitmek yerine, eğitime yüksek bir LR ile başlayıp (hızlı ilerlemek için) minimum noktasına yaklaştıkça LR'yi düşürmek (hedefi kaçırmamak için ince ayar yapmak) genellikle daha iyi sonuçlar verir. 
-
-Bu deneyde taban algoritma olarak SGD+Momentum (Başlangıç LR=0.05) kullanılmış ve üç farklı strateji test edilmiştir.
+Modeli sabit bir Learning Rate ile eğitmek yerine, eğitime yüksek bir LR ile başlayıp minimum noktasına yaklaştıkça LR'yi düşürmek genellikle daha iyi sonuçlar verir. Bu deneyde taban algoritma olarak SGD+Momentum (Başlangıç LR=0.05) kullanılmış ve üç farklı strateji test edilmiştir.
 
 ![Scheduler Comparison](scheduler_comparison.png)
 
-### Zamanlayıcıların Karakteristikleri:
+### Soru & Cevap Analizi ve Karakteristikler:
 
-1. **Constant (No Scheduler):** Eğitim boyunca LR 0.05 olarak kaldı. Model ilk başta hızlı öğrendi ancak minimum noktası etrafında salındığı için (overshooting) test doğruluğunda dalgalanmalar yaşadı.
-2. **StepLR:** Her 5 epoch'ta bir LR'yi %90 azalttı (gamma=0.1). Grafikteki basamaklı yapı budur. LR düştüğü anda test doğruluğunda anlık ve keskin bir sıçrama (iyileşme) görülür.
-3. **CosineAnnealing:** LR'yi bir kosinüs eğrisi izleyerek yavaşça ve pürüzsüzce sıfıra doğru çeker. Olası şokları engeller.
-4. **ReduceLROnPlateau:** Sadece modelin öğrenmesi durduğunda (Validation Loss düzleştiğinde - plateau) LR'yi yarıya böler. En "akıllı" scheduler budur çünkü ezbere adım atmaz, modelin performansını izler.
 
-### Soru & Cevap Analizi:
-**Hangi scheduler en iyi sonuç veriyor?**
-* Grafikte açıkça görüldüğü üzere, sabit (Constant) bırakılan model belirli bir doğruluğa sıkışırken, **StepLR** ve **CosineAnnealing** gibi LR'yi zamanla düşüren teknikler test doğruluklarında belirgin bir sıçrama yaratmıştır. 
-* Bu veri seti için **CosineAnnealing**, öğrenme oranını yumuşak bir şekilde düşürdüğü için hem istikrarlı bir öğrenme sağlamış hem de en yüksek nihai (final) test doğruluğuna ulaşarak en iyi sonucu vermiştir.
+**Hangi scheduler en iyi sonuç veriyor? Neden?**
+* **CosineAnnealing (%98.57 Test Acc - Kazanan):** Öğrenme oranını bir kosinüs eğrisi şeklinde yavaşça ve pürüzsüzce sıfıra indirdiği için modele en stabil öğrenme sürecini sağlamış ve %98.57 ile en yüksek test doğruluğunu vermiştir.
+* **StepLR (%98.41 Test Acc):** Her 5 epoch'ta bir LR'yi %10'una düşürdü. Loglara baktığımızda 5. epoch'ta %97.37 olan başarının, LR düştükten hemen sonra 6. epoch'ta aniden **%98.27**'ye sıçradığı görülmektedir. Ancak ani şoklar nedeniyle CosineAnnealing'in biraz gerisinde kalmıştır.
+* **ReduceLROnPlateau (%98.30 Test Acc):** Model 7. epoch'a kadar plato (düzlük) yapmış, ancak 8. epoch'ta scheduler'ın LR'yi düşürmesiyle (0.05 -> 0.025) test başarısı bir anda 97.37'den 98.19'a fırlamıştır.
+* **Constant (No Scheduler):** Eğitim boyunca LR sabit (0.05) kaldığı için minimum noktası etrafında sürekli salınım yapmış (overshooting) ve %98.10 ile genel olarak en düşük performansta kalmıştır.
 
 ---
 
