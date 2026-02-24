@@ -1,0 +1,20 @@
+# Python önbellek dosyaları (Gereksiz kalabalık yapar)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTorch tarafından indirilen veri seti klasörü (GitHub'a yüklenmemeli!)
+data/
+
+# Sanal ortam klasörleri (Herkes kendi ortamını kurar)
+venv/
+env/
+.venv/
+
+# İşletim sistemi kalıntıları
+.DS_Store
+Thumbs.db
+
+# IDE ayarları (VS Code, PyCharm vb.)
+.vscode/
+.idea/
